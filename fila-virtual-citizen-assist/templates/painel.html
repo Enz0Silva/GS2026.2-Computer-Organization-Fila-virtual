@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fila do mutirão — painel</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+<header>
+  <h1>Fila do mutirão</h1>
+  <p>{{ posto }} · {{ horario }}</p>
+</header>
+<main>
+  <div class="grade" aria-live="polite">
+    <section class="cartao principal">
+      <p class="rotulo">Quem pegar senha agora espera cerca de</p>
+      <p class="numero"><span id="espera">–</span> <small>min</small></p>
+    </section>
+    <section class="cartao">
+      <p class="rotulo">Pessoas aguardando</p>
+      <p class="numero" id="na_fila">–</p>
+    </section>
+    <section class="cartao">
+      <p class="rotulo">Atendimentos concluídos hoje</p>
+      <p class="numero" id="atendidos">–</p>
+    </section>
+    <section class="cartao">
+      <p class="rotulo">Senhas restantes hoje</p>
+      <p class="numero" id="restantes">–</p>
+    </section>
+  </div>
+
+  <div class="grade" style="margin-top:16px">
+    <section class="cartao">
+      <p class="rotulo">Sendo atendidas agora</p>
+      <p class="senhas" id="chamadas">–</p>
+      <p class="rotulo" style="margin-top:12px">Próximas senhas</p>
+      <p class="senhas" id="proximas">–</p>
+    </section>
+    <section class="cartao">
+      <p class="rotulo">Como a espera é estimada</p>
+      <table>
+        <thead><tr><th>Método</th><th>Espera</th></tr></thead>
+        <tbody>
+          <tr><td>Média histórica do atendimento</td><td id="est_media">–</td></tr>
+          <tr><td>Regressão linear simples</td><td id="est_simples">–</td></tr>
+          <tr><td><strong>Regressão linear múltipla (usada acima)</strong></td><td id="est_multipla">–</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <p class="status" id="status">Conectando ao servidor…</p>
+  <p class="aviso">Tempo de espera estimado, não garantido. Os modelos foram treinados com dados simulados e com os atendimentos registrados neste protótipo. Este painel não é um canal oficial.</p>
+</main>
+<script>
+const INTERVALO = {{ intervalo }};
+const $ = (id) => document.getElementById(id);
+const min = (v) => (v === null || v === undefined) ? "–" : Math.round(v) + " min";
+
+async function atualizar() {
+  try {
+    const r = await fetch("/api/estado", { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const e = await r.json();
+    $("espera").textContent = Math.round(e.espera_nova_senha_min);
+    $("na_fila").textContent = e.na_fila;
+    $("atendidos").textContent = e.atendidos;
+    $("restantes").textContent = e.senhas_restantes;
+    $("chamadas").textContent = e.senhas_em_atendimento.length ? e.senhas_em_atendimento.join(" · ") : "nenhuma";
+    $("proximas").textContent = e.senhas_aguardando.length ? e.senhas_aguardando.slice(0, 8).join(" · ") : "nenhuma";
+    $("est_media").textContent = min(e.estimativas_min.media);
+    $("est_simples").textContent = min(e.estimativas_min.regressao_simples);
+    $("est_multipla").textContent = min(e.estimativas_min.regressao_multipla);
+    $("status").textContent = "Atualizado às " + e.atualizado_em + " · atualiza sozinho a cada " + (INTERVALO / 1000) + " s";
+    $("status").className = "status";
+  } catch (erro) {
+    $("status").textContent = "Sem conexão com o servidor da fila. Os números acima podem estar desatualizados.";
+    $("status").className = "status erro";
+  }
+}
+atualizar();
+setInterval(atualizar, INTERVALO);
+</script>
+</body>
+</html>

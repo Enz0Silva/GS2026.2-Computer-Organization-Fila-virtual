@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fila do mutirão — operador</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+<header>
+  <h1>Operador da fila</h1>
+  <p>{{ posto }} · {{ atendentes }} atendentes · até {{ limite }} senhas por dia · <a href="/">abrir o painel público</a></p>
+</header>
+<main>
+  <div class="botoes">
+    <button id="btn-chegada" type="button">Chegou uma pessoa <small>(tecla C)</small></button>
+    <button id="btn-concluir" type="button">Atendimento concluído <small>(tecla A)</small></button>
+  </div>
+  <p id="mensagem" role="status" aria-live="assertive"></p>
+
+  <div class="grade" style="margin-top:8px">
+    <section class="cartao"><p class="rotulo">Aguardando</p><p class="numero" id="na_fila">–</p></section>
+    <section class="cartao"><p class="rotulo">Em atendimento</p><p class="numero" id="em_atendimento">–</p></section>
+    <section class="cartao"><p class="rotulo">Concluídos</p><p class="numero" id="atendidos">–</p></section>
+    <section class="cartao principal"><p class="rotulo">Espera de uma nova senha</p><p class="numero"><span id="espera">–</span> <small>min</small></p></section>
+  </div>
+
+  <section class="cartao" style="margin-top:16px">
+    <p class="rotulo">Últimos eventos (o log completo fica em dados/eventos.csv · <a href="/api/eventos.csv">baixar</a>)</p>
+    <table>
+      <thead><tr><th>Horário</th><th>Evento</th><th>Senha</th><th>Aguardando</th><th>Em atendimento</th><th>Detalhe</th></tr></thead>
+      <tbody id="eventos"></tbody>
+    </table>
+  </section>
+  <p class="status" id="status">Conectando…</p>
+</main>
+<script>
+const INTERVALO = {{ intervalo }};
+const $ = (id) => document.getElementById(id);
+
+function mostrar(e) {
+  $("na_fila").textContent = e.na_fila;
+  $("em_atendimento").textContent = e.em_atendimento;
+  $("atendidos").textContent = e.atendidos;
+  $("espera").textContent = Math.round(e.espera_nova_senha_min);
+  $("eventos").innerHTML = e.ultimos_eventos.slice(0, 10).map(ev =>
+    `<tr><td>${ev.data_hora.slice(11)}</td><td>${ev.evento}</td><td>${ev.senha}</td><td>${ev.aguardando}</td><td>${ev.em_atendimento}</td><td>${ev.detalhe}</td></tr>`).join("");
+  $("status").textContent = "Atualizado às " + e.atualizado_em;
+  $("status").className = "status";
+}
+
+async function enviar(rota) {
+  try {
+    const r = await fetch(rota, { method: "POST" });
+    const dados = await r.json();
+    if (dados.ok) {
+      $("mensagem").className = "";
+      $("mensagem").textContent = rota.endsWith("chegada")
+        ? `Senha ${dados.senha} emitida. Espera estimada: ${Math.round(dados.espera_estimada_min)} min.`
+        : `Atendimento da senha ${dados.senha} concluído.`;
+    } else {
+      $("mensagem").className = "erro";
+      $("mensagem").textContent = "Recusado: " + dados.erro;
+    }
+    mostrar(dados.estado);
+  } catch (erro) {
+    $("mensagem").className = "erro";
+    $("mensagem").textContent = "Sem conexão com o servidor. Nada foi registrado.";
+  }
+}
+
+async function atualizar() {
+  try {
+    const r = await fetch("/api/estado", { cache: "no-store" });
+    mostrar(await r.json());
+  } catch (erro) {
+    $("status").textContent = "Sem conexão com o servidor.";
+    $("status").className = "status erro";
+  }
+}
+
+$("btn-chegada").addEventListener("click", () => enviar("/api/chegada"));
+$("btn-concluir").addEventListener("click", () => enviar("/api/concluir"));
+document.addEventListener("keydown", (ev) => {
+  if (ev.repeat) return;                     // segurar a tecla não registra vários eventos
+  if (ev.key === "c" || ev.key === "C") enviar("/api/chegada");
+  if (ev.key === "a" || ev.key === "A") enviar("/api/concluir");
+});
+atualizar();
+setInterval(atualizar, INTERVALO);
+</script>
+</body>
+</html>

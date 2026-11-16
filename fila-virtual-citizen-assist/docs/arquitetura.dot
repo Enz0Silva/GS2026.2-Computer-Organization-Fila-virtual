@@ -1,0 +1,44 @@
+digraph arquitetura {
+  graph [rankdir=TB, fontname="Helvetica", fontsize=12, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.6,
+         label="Arquitetura da fila virtual do mutirão — Citizen Assist AI (Computer Organization)", labelloc=t, fontsize=16];
+  node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, color="#5b6474", fillcolor="#ffffff"];
+  edge  [fontname="Helvetica", fontsize=9, color="#5b6474"];
+
+  subgraph cluster_entrada {
+    label="Dispositivos de ENTRADA"; style="rounded,dashed"; color="#0b6e4f"; fontcolor="#0b6e4f";
+    op   [label="Botões virtuais\n(página /operador no navegador\ndo balcão; teclas C e A)"];
+    tecl [label="Botões \"físicos\" emulados\n(botoes_teclado.py)\nno hardware real: ESP32 + 2 botões"];
+  }
+
+  subgraph cluster_servidor {
+    label="Servidor do posto — computador x86-64 (ou Raspberry Pi 4, ARM Cortex-A72)"; style="rounded"; color="#1d2330";
+    nic  [label="Interface de rede\nWi-Fi / Ethernet\nTCP/IP · HTTP/1.1 · JSON\nporta 5000", fillcolor="#eef2f8"];
+    subgraph cluster_cpu {
+      label="CPU — processo Python (Flask, várias threads)"; style="rounded,filled"; fillcolor="#f6f4ef"; color="#d9d4c7";
+      api  [label="servidor.py\nrotas HTTP (E/S)"];
+      fila [label="fila.py · FilaVirtual\nregras: sem contagem negativa,\nlimite de 40 senhas, Lock"];
+      prev [label="previsao.py · IA\nmédia histórica × regressão\nlinear simples e múltipla"];
+    }
+    ram  [label="Memória RAM\nfila (deque de senhas)\núltimos 20 eventos\ncoeficientes dos modelos\nhistórico de treino (~0,3 MB)", shape=cylinder, fillcolor="#fff8e6"];
+    disco[label="Armazenamento (SSD / microSD)\ndados/eventos.csv (log com horário)\ndados/atendimentos_reais.csv\ndados/historico_simulado.csv", shape=cylinder, fillcolor="#fff8e6"];
+  }
+
+  subgraph cluster_saida {
+    label="Dispositivos de SAÍDA"; style="rounded,dashed"; color="#2f4b7c"; fontcolor="#2f4b7c";
+    painel [label="Painel público (página /)\nTV do posto ou celular do cidadão\natualiza a cada 2 s"];
+    pcp    [label="Assistente Citizen Assist AI\n(PCP, terminal)\nopção \"Ver a fila do mutirão\""];
+  }
+
+  op   -> nic  [label="POST /api/chegada\nPOST /api/concluir"];
+  tecl -> nic  [label="HTTP POST"];
+  nic  -> api  [label="pedido"];
+  api  -> fila [label="chegada() /\nconcluir()"];
+  fila -> prev [label="atendimento medido\n(re-treino)"];
+  fila -> ram  [dir=both, label="estado"];
+  prev -> ram  [dir=both, label="coeficientes"];
+  fila -> disco[label="grava evento\n(append)"];
+  disco -> prev[label="histórico na\ninicialização", style=dashed];
+  api  -> nic  [label="JSON"];
+  nic  -> painel [label="GET /api/estado\n(polling 2 s)"];
+  nic  -> pcp    [label="GET /api/estado\n(urllib)"];
+}

@@ -1,0 +1,16 @@
+data_hora,evento,senha,aguardando,em_atendimento,atendidos,detalhe
+2026-11-14 15:00:42,RECUSADO,,0,0,0,conclusão com a fila vazia
+2026-11-14 15:00:59,CHEGADA,1,0,1,0,0 pessoa(s) à frente
+2026-11-14 15:00:59,CHAMADA,1,0,1,0,senha chamada ao guichê
+2026-11-14 15:01:01,CHEGADA,2,0,2,0,1 pessoa(s) à frente
+2026-11-14 15:01:01,CHAMADA,2,0,2,0,senha chamada ao guichê
+2026-11-14 15:01:02,CHEGADA,3,1,2,0,2 pessoa(s) à frente
+2026-11-14 15:01:04,CHEGADA,4,2,2,0,3 pessoa(s) à frente
+2026-11-14 15:01:11,CHEGADA,5,3,2,0,4 pessoa(s) à frente
+2026-11-14 15:01:11,CHEGADA,6,4,2,0,5 pessoa(s) à frente
+2026-11-14 15:01:24,CONCLUSAO,1,3,2,1,esperou 0.0 min; atendimento de 0.4 min
+2026-11-14 15:01:24,CHAMADA,3,3,2,1,senha chamada ao guichê
+2026-11-14 15:01:25,CONCLUSAO,2,2,2,2,esperou 0.0 min; atendimento de 0.4 min
+2026-11-14 15:01:25,CHAMADA,4,2,2,2,senha chamada ao guichê
+2026-11-14 15:03:53,CHEGADA,7,3,2,2,4 pessoa(s) à frente
+2026-11-14 15:04:01,CHEGADA,8,4,2,2,5 pessoa(s) à frente
