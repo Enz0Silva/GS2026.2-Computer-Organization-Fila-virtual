@@ -10,7 +10,7 @@ Protótipo de um **Sistema Inteligente de Gerenciamento de Filas Virtuais** para
 | Eric Hernandes Penhalbel | 570237 |
 | Matheus Borges Soares | 574085 |
 
-**Vídeo de demonstração (até 5 min, YouTube não listado):** _(colar o link)_
+**Vídeo de demonstração (até 5 min, YouTube não listado):** (https://youtu.be/McynnWF_gtk)
 **Relatório técnico:** [`docs/RELATORIO_TECNICO.pdf`](docs/RELATORIO_TECNICO.pdf) · **Diagrama de arquitetura:** [`docs/arquitetura.png`](docs/arquitetura.png)
 
 ![Arquitetura](docs/arquitetura.png)
